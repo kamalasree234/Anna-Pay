@@ -70,7 +70,7 @@ Staff members are not automatically informed when their salary is credited, when
 AnnaPay is a web-based payroll management system specifically designed for college institutions. The application is built on two primary pillars:
 
 - **Payroll Processing** — automated, data-driven salary calculation from uploaded Excel sheets, linked bank accounts, and a chosen payment gateway
-- **Notification System** — the crown feature of AnnaPay, delivering timely, priority-based, bilingual (English and Tamil) notifications for every meaningful payroll event
+- **Notification System** — the crown feature of AnnaPay, delivering timely, priority-based notifications for every meaningful payroll event (English only in current sprint)
 
 ### 2.1 What is IN Scope
 
@@ -117,7 +117,7 @@ This is the central feature of AnnaPay. Every significant payroll event generate
 | Property | Detail |
 |---|---|
 | **Priority-based** | CRITICAL (salary credit, tax deduction) > HIGH (leave deduction, increment) > NORMAL (reminders, reports) |
-| **Bilingual** | Delivered in English and Tamil based on employee preference |
+| **English Only** | All notifications delivered in English in the current sprint (Tamil deferred to future sprint) |
 | **Scheduled** | Salary notifications sent at the start of every month at a configurable time (e.g., 9:00 AM on 1st) |
 | **Formatted** | Every notification contains Employee Name, Employee ID, and the core message |
 | **Fault-tolerant** | If delivery fails, a fallback mechanism (retry queue + SMS) is triggered automatically |
@@ -169,7 +169,7 @@ User stories are ordered by descending priority. Higher story points indicate hi
 | US-16 | Employee | Edit personal information | Low | 3 |
 | US-17 | Admin | Manage tax deductions | Low | 3 |
 | US-18 | System | Standard notification format | Low | 3 |
-| US-19 | System | Bilingual notifications (EN + TA) | Low | 3 |
+| US-19 | System | Bilingual notifications (EN + TA) | Future | 3 |
 | US-20 | Employee | AI-based salary insights (Phase 2) | Future | 3 |
 
 ### 4.1 Detailed User Stories with Acceptance Criteria
@@ -528,7 +528,7 @@ once credited. For queries, contact your payroll administrator."
 |---|---|---|---|
 | In-App | Firebase Cloud Messaging (FCM) | Always sent for all notification types | `FCM_SERVER_KEY` |
 | Email | Nodemailer + SMTP | Sent alongside In-App for all types | `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` |
-| SMS (Fallback) | MSG91 / Twilio | ONLY when In-App + Email both fail after 3 retries | `MSG91_API_KEY`; DLT compliant; Tamil Unicode |
+| SMS (Fallback) | MSG91 / Twilio | ONLY when In-App + Email both fail after 3 retries | `MSG91_API_KEY`; DLT compliant |
 
 ### 6.5 Scheduler Design (node-cron)
 
@@ -570,7 +570,7 @@ When a payroll event fires, the API handler performs two actions:
 
 Messages are published as persistent (`delivery_mode=2`) so they survive a RabbitMQ broker restart.
 
-Message payload includes: `notif_id`, `emp_id`, `employee_code`, `name`, `email`, `phone`, `fcm_token`, `language_preference`, `type`, `priority`, `message_en`, `message_ta`, `retry_count`, `related_record_id`.
+Message payload includes: `notif_id`, `emp_id`, `employee_code`, `name`, `email`, `phone`, `fcm_token`, `type`, `priority`, `message_en`, `retry_count`, `related_record_id`.
 
 **How Consumer Workers Process Messages**
 
@@ -580,7 +580,7 @@ Three separate Node.js worker processes run — one per priority level. Each wor
 Step 1 → Parse the JSON payload from the message body
 Step 2 → Idempotency check — if notification status is already sent, read, or cancelled → ACK immediately and stop
 Step 3 → Render message template — replace all placeholders with real values
-Step 4 → Apply language preference — Tamil if available; else English; log language_fallback=true if fallback occurs
+Step 4 → All notifications delivered in English (message_en)
 Step 5 → Attempt FCM push to employee's fcm_token
 Step 6 → Attempt email delivery via Nodemailer
 Step 7 → Both succeed → status=sent, sent_at=now, ACK to RabbitMQ
@@ -608,13 +608,9 @@ Step 7 → All attempts logged in notifications table with timestamps
 Step 8 → Permanently failed → annapay.dead queue; Admin Portal alert banner
 ```
 
-### 6.8 Bilingual Support
+### 6.8 Language Support
 
-Every notification template is stored in two columns:
-- `message_en` — English message
-- `message_ta` — Tamil message
-
-The employee's `language_preference` field (set in their profile) determines which message is delivered. If Tamil is selected but `message_ta` is empty, the system falls back to English automatically and logs `language_fallback=true`. The employee can change their language preference from the Employee Portal profile section.
+All notification templates are stored in a single `message_en` column and delivered in English. Tamil and other regional language support is fully deferred to a future sprint. There is no `language_preference` field or `message_ta` column in the current sprint.
 
 ### 6.9 Unread Reminder Flow
 
@@ -643,8 +639,7 @@ The MySQL database is organized into the following core tables. All tables use a
 ```
 employees
   emp_id, name, email, phone, department_id, role_id, status (active/inactive),
-  joined_date, bank_account_no (AES-256 encrypted), bank_ifsc (AES-256 encrypted),
-  language_preference
+  joined_date, bank_account_no (AES-256 encrypted), bank_ifsc (AES-256 encrypted)
 
 departments
   dept_id, dept_name, dept_type (academic / admin / blue_collar)
@@ -667,9 +662,9 @@ leave_records
   leave_id, emp_id, leave_date, leave_type, approved_by, deducted_amount
 
 notifications
-  notif_id, emp_id, type, subject, message_en, message_ta, priority,
+  notif_id, emp_id, type, subject, message_en, priority,
   status (pending/sent/failed/read), scheduled_at, sent_at, retry_count,
-  channel, language_fallback
+  channel
 
 notification_reminders
   reminder_id, notif_id, sent_at, status
@@ -840,7 +835,7 @@ The Admin Portal is completely separate from the Employee Portal — different U
 
 ### 11.1 Login
 
-Employees log in via Employee ID and password. On first login, they are prompted to set a password and confirm their language preference (English / Tamil).
+Employees log in via Employee ID and password. On first login, they are prompted to set a new password.
 
 ### 11.2 Dashboard Overview
 
@@ -874,7 +869,7 @@ Employees log in via Employee ID and password. On first login, they are prompted
 
 | Field | Access |
 |---|---|
-| Phone number, Personal email, Home address, Language preference | Editable by employee |
+| Phone number, Personal email, Home address | Editable by employee |
 | Employee ID, Department, Role, Bank Account, Salary Grade | View-only (admin-managed) |
 
 ### 11.7 Annual Report
@@ -947,7 +942,7 @@ Employees log in via Employee ID and password. On first login, they are prompted
 
 | | Detail |
 |---|---|
-| Primary SMS | MSG91 — preferred for India, lower cost, Tamil Unicode, DLT compliant |
+| Primary SMS | MSG91 — preferred for India, lower cost, DLT compliant |
 | Fallback SMS | Twilio — global fallback if MSG91 unavailable |
 | When Triggered | Only after 3 failed In-App + Email attempts |
 
@@ -1153,7 +1148,7 @@ Since payroll information is highly sensitive financial data, the notification s
 | UT-01 | Salary calc — professor with 5yr experience → correct grade pay and increment applied | Salary Engine |
 | UT-02 | Salary calc — blue-collar worker with 3 leave days → 3 days deducted at daily rate; correct net pay returned | Salary Engine |
 | UT-03 | Notification formatted with name, EID, message → output matches defined format exactly | Notification |
-| UT-04 | language_preference=Tamil → message_ta used; English not sent | Notification |
+| UT-04 | All notifications delivered in English only — no language_preference field active | Notification |
 | UT-05 | Failed delivery → retry_count incremented; status remains failed | Notification |
 | UT-06 | retry_count reaches 3 → SMS fallback triggered; admin alert created | Notification |
 | UT-07 | bcrypt password hash validated → valid returns true; wrong returns false | Auth |
@@ -1163,7 +1158,7 @@ Since payroll information is highly sensitive financial data, the notification s
 | UT-11 | Notification with status=sent reprocessed → worker ACKs immediately without resending (idempotency) | RabbitMQ Worker |
 | UT-12 | NACK on delivery failure → message appears in annapay.retry.{priority} | RabbitMQ Worker |
 | UT-13 | Stale FCM token (registration-not-found) → token cleared; notification not failed | Notification |
-| UT-14 | Tamil template missing → fallback to English; language_fallback=true logged | Notification |
+| UT-14 | Notification template exists in English → correct message_en delivered to employee | Notification |
 | UT-15 | Unread reminder → only ONE entry in notification_reminders per notif_id | Reminder Scheduler |
 
 ### 16.2 Integration Tests
@@ -1187,7 +1182,7 @@ Since payroll information is highly sensitive financial data, the notification s
 | E2E-02 | Employee logs in → views salary breakdown chart → reads salary-credited notification → marks as read |
 | E2E-03 | Admin marks professor as departed → system archives data → final NS-06 notification sent → portal access revoked |
 | E2E-04 | Notification fails → retried 3 times via RabbitMQ retry queues → SMS fallback sent → admin sees alert in portal |
-| E2E-05 | Employee sets language to Tamil → receives next salary notification in Tamil (message_ta used) |
+| E2E-05 | Employee receives all notifications in English — message content clear and accurate |
 | E2E-06 | Employee does not open notification for 48 hours → daily cron detects → reminder NS-07 sent once |
 | E2E-07 | Admin triggers bulk notification for 2000 staff → all receive notification → no duplicates → no server crash |
 
@@ -1234,7 +1229,7 @@ Since payroll information is highly sensitive financial data, the notification s
 | Duplicate notifications | Medium | Idempotency check by notif_id before send; event uniqueness validation |
 | Gateway failure during bulk send | Medium | RabbitMQ retry queues; fallback SMS; admin alert |
 | RabbitMQ broker crash | High | Persistent queues (delivery_mode=2); durable declarations; ACK/NACK |
-| Tamil template missing | Low | Auto fallback to English; language_fallback flag logged |
+| Notification template missing | Low | Validate all message_en templates exist before salary run |
 
 ### 16.8 Logging & Audit Validation
 
@@ -1247,7 +1242,6 @@ All notifications must log the following in the notifications table:
 - Delivery Status (pending / sent / failed / read)
 - retry_count
 - Error message (if any)
-- language_fallback flag
 
 Audit logs in `audit_log` must not be editable by staff. Retained 7 years.
 
@@ -1264,7 +1258,7 @@ Audit logs in `audit_log` must not be editable by staff. Retained 7 years.
 | US-09 Departed Employee | IT-04, E2E-03 | Planned |
 | US-10 Retry & Fallback | UT-05, UT-06, UT-11, UT-12, IT-08, E2E-04 | Planned |
 | US-11 Unread Reminder | UT-15, E2E-06 | Planned |
-| US-19 Bilingual Support | UT-04, UT-14, E2E-05 | Planned |
+| US-19 Bilingual Support | Deferred to future sprint — no test cases in Sprint Zero | Future |
 
 ### 16.10 Sprint Zero QA Success Criteria
 
@@ -1289,7 +1283,7 @@ Sprint Zero will be considered QA-ready when:
 | Salary run triggered for an already processed month | System detects existing salary_records for that month; admin warned; re-run requires explicit confirmation |
 | Employee email bounces | Email marked failed; retry via RabbitMQ; SMS fallback after 3 attempts; admin notified |
 | Cron restarts and fires again on 1st | Idempotency: notifications already sent for current month are skipped (emp_id + month + type) |
-| Tamil notification template missing | System falls back to English; logs language_fallback=true; admin alerted |
+| Notification template not found for event type | Notification creation fails gracefully; error logged; admin alerted; no worker crash |
 | Razorpay webhook received more than once for same payment | Handler checks for existing processed record; duplicate skipped with 200 OK |
 | Employee has 0 leave days deducted | Leave deduction notification NOT sent (no event to notify about) |
 | Excel uploaded with wrong column names or format | Full file rejected with detailed error report; no partial ingestion |
@@ -1317,7 +1311,7 @@ Sprint Zero will be considered QA-ready when:
 - Staff must be notified about any deductions in salary
 - HR/Admin must be able to trigger bulk notifications after payroll
 - Staff must be able to view their past notification history
-- Notifications should support English (Tamil in future sprint)
+- Notifications should support English only in current sprint (Tamil in future sprint)
 
 ### 18.3 Requirement Feasibility & Priority
 
