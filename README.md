@@ -24,22 +24,22 @@
 
 1. [Problem Statement](#1-problem-statement)
 2. [Project Overview & Scope](#2-project-overview--scope)
-3. [Key Features](#3-key-features)
-4. [User Stories & Acceptance Criteria](#4-user-stories--acceptance-criteria)
-5. [System Architecture](#5-system-architecture)
-6. [Notification System — Core Engine](#6-notification-system--core-engine)
-7. [Database Design](#7-database-design)
-8. [Data Management — Excel Integration](#8-data-management--excel-integration)
-9. [Payment Gateway Integration](#9-payment-gateway-integration)
-10. [Administrator UI — Full Specification](#10-administrator-ui--full-specification)
-11. [Employee UI — Full Specification](#11-employee-ui--full-specification)
-12. [Technology Stack — Complete Justification](#12-technology-stack--complete-justification)
-13. [API Design](#13-api-design)
-14. [Security](#14-security)
-15. [Deployment](#15-deployment)
-16. [QA / Test Strategy](#16-qa--test-strategy)
-17. [Edge Cases & Error Handling](#17-edge-cases--error-handling)
-18. [Business Analysis — Stakeholders, Requirements & Bridge](#18-business-analysis--stakeholders-requirements--bridge)
+3. [Business Analysis — Stakeholders, Requirements & Bridge](#3-business-analysis--stakeholders-requirements--bridge)
+4. [Key Features](#4-key-features)
+5. [User Stories & Acceptance Criteria](#5-user-stories--acceptance-criteria)
+6. [System Architecture](#6-system-architecture)
+7. [Notification System — Core Engine](#7-notification-system--core-engine)
+8. [Database Design](#8-database-design)
+9. [Data Management — Excel Integration](#9-data-management--excel-integration)
+10. [Payment Gateway Integration](#10-payment-gateway-integration)
+11. [Administrator UI — Full Specification](#11-administrator-ui--full-specification)
+12. [Employee UI — Full Specification](#12-employee-ui--full-specification)
+13. [Technology Stack — Complete Justification](#13-technology-stack--complete-justification)
+14. [API Design](#14-api-design)
+15. [Security](#15-security)
+16. [Deployment](#16-deployment)
+17. [QA / Test Strategy](#17-qa--test-strategy)
+18. [Edge Cases & Error Handling](#18-edge-cases--error-handling)
 19. [Current Limitations (Sprint Zero Scope)](#19-current-limitations-sprint-zero-scope)
 20. [Future Scope](#20-future-scope)
 21. [Overall System Flow](#21-overall-system-flow)
@@ -93,13 +93,93 @@ AnnaPay is a web-based payroll management system specifically designed for colle
 
 ---
 
-## 3. Key Features
+## 3. Business Analysis — Stakeholders, Requirements & Bridge
 
-### 3.1 Excel-Driven Data Ingestion
+### 3.1 Stakeholders Identified
+
+- **University Admin / HR / Finance** — trigger payroll, manage staff records, send bulk notifications
+- **Staff Members (Professors, Non-Teaching Staff)** — receive salary, deduction, and payslip notifications
+- **IT/Tech Team** — maintain the system, manage infrastructure
+
+### 3.2 Key Requirements Gathered
+
+- Staff must be notified when salary is credited
+- Staff must be notified when payslip is available
+- Staff must be notified about any deductions in salary
+- HR/Admin must be able to trigger bulk notifications after payroll
+- Staff must be able to view their past notification history
+- Notifications should support English only in current sprint (Tamil in future sprint)
+
+### 3.3 Requirement Feasibility & Priority
+
+| Requirement | Feasibility | Priority |
+|---|---|---|
+| Salary credited notification | High | Critical |
+| Payslip available alert | High | High |
+| Deduction/tax details notification | High | High |
+| Admin bulk notification trigger | High | High |
+| Notification history for staff | Medium | Medium |
+| Multi-language support (Tamil) | Low | Future Sprint |
+
+### 3.4 Business Need ↔ Tech Solution Bridge
+
+<details>
+<summary><strong>US-01 — Staff notified moment salary is credited</strong></summary>
+
+- **BA Need** — Staff should know the moment salary is credited to their bank without manually checking
+- **Developer** — Node.js consumes Razorpay webhook, publishes to RabbitMQ `annapay.critical`; worker dispatches via FCM + Nodemailer; Angular shows real-time notification
+- **Tester** — Verify notification received within 5 minutes after credit trigger; net amount matches DB
+</details>
+
+<details>
+<summary><strong>US-02 — Staff knows when payslip is ready</strong></summary>
+
+- **BA Need** — Staff should be immediately informed when payslip is available
+- **Developer** — Node.js sends notification with payslip reference when generated; Angular renders link in notification panel
+- **Tester** — Check if reference works and notification reaches correct staff only
+</details>
+
+<details>
+<summary><strong>US-03 — Staff aware of any salary deductions</strong></summary>
+
+- **BA Need** — Staff should be clearly informed about deductions with type and amount
+- **Developer** — Node.js fetches deduction data from MySQL, includes in notification payload via RabbitMQ; Angular displays summary
+- **Tester** — Verify deduction details in notification match actual payroll data in MySQL
+</details>
+
+<details>
+<summary><strong>US-04 — HR notifies all staff at once after payroll</strong></summary>
+
+- **BA Need** — HR should be able to send notifications to all 2000+ staff in one action with no manual effort
+- **Developer** — Angular admin panel has trigger button; Node.js publishes one message per employee to RabbitMQ; workers handle bulk
+- **Tester** — Test bulk send with 2000+ user accounts; check no one missed; verify idempotency
+</details>
+
+<details>
+<summary><strong>US-05 — Staff views past notifications</strong></summary>
+
+- **BA Need** — Staff should have a record of all payroll notifications received for reference
+- **Developer** — Node.js stores every notification in MySQL notifications table; Angular fetches and displays history ordered by date
+- **Tester** — Verify history accurate, ordered by date, loads correctly
+</details>
+
+<details>
+<summary><strong>US-06 — All notifications in English for current sprint</strong></summary>
+
+- **BA Need** — All staff should be able to read and understand notifications
+- **Developer** — All notification templates authored in English (message_en); Tamil support deferred
+- **Tester** — Verify all notifications delivered in English correctly
+</details>
+
+---
+
+## 4. Key Features
+
+### 4.1 Excel-Driven Data Ingestion
 
 AnnaPay does not require manual data entry. The administrator uploads structured Excel files — one per department — and the system automatically parses, validates, and loads them into the database. Separate files are maintained for professors, administrative staff, and blue-collar workers. Each file contains built-in logic to compute experience-based increments (e.g., every 2 years of service triggers a salary step-up).
 
-### 3.2 Role-Based Payroll Engine
+### 4.2 Role-Based Payroll Engine
 
 Salary calculation is not one-size-fits-all. AnnaPay supports multiple pay scales:
 
@@ -110,7 +190,7 @@ Salary calculation is not one-size-fits-all. AnnaPay supports multiple pay scale
 | **Blue-collar** | Daily-wage or monthly wage, with attendance-based computation |
 | **Bonus Triggers** | Automatically calculated when experience milestones are reached |
 
-### 3.3 Notification System (Primary Feature — Core Engine)
+### 4.3 Notification System (Primary Feature — Core Engine)
 
 This is the central feature of AnnaPay. Every significant payroll event generates a notification. Notifications are:
 
@@ -123,29 +203,29 @@ This is the central feature of AnnaPay. Every significant payroll event generate
 | **Fault-tolerant** | If delivery fails, a fallback mechanism (retry queue + SMS) is triggered automatically |
 | **Reminder-capable** | If a notification remains unread, a follow-up reminder is sent after 48 hours |
 
-### 3.4 Payment Gateway Integration
+### 4.4 Payment Gateway Integration
 
 AnnaPay integrates with **Razorpay** (with PayU and Cashfree as alternatives) to disburse salaries directly to linked employee bank accounts. After disbursement, the system automatically updates the database record and sends the salary-credited notification.
 
-### 3.5 Administrator Portal
+### 4.5 Administrator Portal
 
 A dedicated secured portal for payroll administrators allowing full management of employees, payments, notifications, tax rules, Excel uploads, and database oversight. The administrator has exclusive rights to fields that employees cannot self-edit.
 
-### 3.6 Employee Portal
+### 4.6 Employee Portal
 
 A personalized dashboard for each employee showing salary breakdown with visualization, attendance and leave records, notification history, reminders, annual tax report, and a partially editable profile. Employees can view but not alter payroll-sensitive information.
 
-### 3.7 Departed Employee Record Retention
+### 4.7 Departed Employee Record Retention
 
 When a professor or staff member leaves the college, their full payroll history — including salary records, tax deductions, and notifications — is archived and remains accessible to administrators. This satisfies audit and compliance requirements.
 
-### 3.8 AI-Based Salary Insights (Phase 2)
+### 4.8 AI-Based Salary Insights (Phase 2)
 
 In a future phase, AnnaPay will surface AI-generated insights on the employee dashboard — projected annual tax liability, salary growth trends, comparison of gross vs. net pay over months, and flagging anomalies in deductions.
 
 ---
 
-## 4. User Stories & Acceptance Criteria
+## 5. User Stories & Acceptance Criteria
 
 User stories are ordered by descending priority. Higher story points indicate higher complexity and priority for the sprint backlog.
 
@@ -172,7 +252,7 @@ User stories are ordered by descending priority. Higher story points indicate hi
 | US-19 | System | Bilingual notifications (EN + TA) | Future | 3 |
 | US-20 | Employee | AI-based salary insights (Phase 2) | Future | 3 |
 
-### 4.1 Detailed User Stories with Acceptance Criteria
+### 5.1 Detailed User Stories with Acceptance Criteria
 
 <details>
 <summary><strong>US-01 (Critical) — Salary Credited Notification</strong></summary>
@@ -250,11 +330,11 @@ User stories are ordered by descending priority. Higher story points indicate hi
 
 ---
 
-## 5. System Architecture
+## 6. System Architecture
 
 AnnaPay follows a three-tier architecture: a client-facing frontend (Angular), a RESTful backend API (Node.js/Express), and a relational database (MySQL). The notification engine runs as a background service within the Node.js layer, orchestrated by a job scheduler (node-cron) and a RabbitMQ message broker.
 
-### 5.1 Architecture Layers
+### 6.1 Architecture Layers
 
 | Layer | Technology | Responsibility |
 |---|---|---|
@@ -267,7 +347,7 @@ AnnaPay follows a three-tier architecture: a client-facing frontend (Angular), a
 | Message Broker | RabbitMQ 3.12+ | Priority-based async delivery, ACK/NACK |
 | Caching (optional) | Redis | Session, rate limiting |
 
-### 5.2 Data Flow — Salary Disbursement
+### 6.2 Data Flow — Salary Disbursement
 
 ```
 Step 1  → Administrator uploads Excel file with employee data
@@ -279,7 +359,7 @@ Step 6  → On payment success webhook, salary record updated; Excel updated
 Step 7  → Notification dispatched to employee via RabbitMQ
 ```
 
-### 5.3 Data Flow — Notification System
+### 6.3 Data Flow — Notification System
 
 ```
 Step 1  → A payroll event occurs (salary credited, leave taken, increment, tax update)
@@ -297,11 +377,11 @@ Step 11 → Angular frontend displays notification to staff on dashboard
 
 ---
 
-## 6. Notification System — Core Engine
+## 7. Notification System — Core Engine
 
 The notification system is the **primary feature** of AnnaPay. Every design decision must prioritize reliable, timely, and clear delivery of payroll events to the right employee.
 
-### 6.1 Notification Types & Priority Matrix
+### 7.1 Notification Types & Priority Matrix
 
 | Type | Priority | Trigger | Channel |
 |---|---|---|---|
@@ -315,7 +395,7 @@ The notification system is the **primary feature** of AnnaPay. Every design deci
 | Unread Reminder | 🟡 NORMAL | Original notification unread after 48 hours | Same as original |
 | Scheduled Salary Reminder | 🟡 NORMAL | Month start — salary processing initiated | In-App + Email |
 
-### 6.2 Standard Notification Message Format
+### 7.2 Standard Notification Message Format
 
 Every notification — regardless of type — must follow this exact format:
 
@@ -346,7 +426,7 @@ For queries, contact your payroll administrator."
 For queries, contact your payroll administrator."
 ```
 
-### 6.3 Detailed Notification Scenarios
+### 7.3 Detailed Notification Scenarios
 
 <details>
 <summary><strong>NS-01 — Salary Credited Notification (CRITICAL)</strong></summary>
@@ -522,7 +602,7 @@ once credited. For queries, contact your payroll administrator."
 - Must not be sent again if cron restarts (idempotency by emp_id + month + type)
 </details>
 
-### 6.4 Notification Channels
+### 7.4 Notification Channels
 
 | Channel | Technology | When Used | Config Key |
 |---|---|---|---|
@@ -530,7 +610,7 @@ once credited. For queries, contact your payroll administrator."
 | Email | Nodemailer + SMTP | Sent alongside In-App for all types | `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` |
 | SMS (Fallback) | MSG91 / Twilio | ONLY when In-App + Email both fail after 3 retries | `MSG91_API_KEY`; DLT compliant |
 
-### 6.5 Scheduler Design (node-cron)
+### 7.5 Scheduler Design (node-cron)
 
 | Cron Job | Expression | Description |
 |---|---|---|
@@ -542,7 +622,7 @@ once credited. For queries, contact your payroll administrator."
 - `CRON_MONTHLY_TIME` — Controls the monthly salary cron time
 - `CRON_REMINDER_DELAY_HOURS` — Reminder threshold in hours (default: 48)
 
-### 6.6 RabbitMQ Message Queue Architecture
+### 7.6 RabbitMQ Message Queue Architecture
 
 AnnaPay uses RabbitMQ as its message broker to decouple notification creation from notification delivery. Without a message queue, every payroll event would attempt to send emails and push notifications synchronously — a slow SMTP server could abort a salary run, and a 300-employee tax update would block the API for minutes.
 
@@ -594,7 +674,7 @@ Step 8 → Either fails → NACK with requeue=false → routed to retry queue �
 - **TTL-based Retry** — Dead-letter exchange enables precise per-priority retry delays without polling (15min / 1hr / 3hr)
 - **Priority Isolation** — Normal notification backlog cannot delay a CRITICAL salary notification (separate queues)
 
-### 6.7 Retry & Fallback Logic
+### 7.7 Retry & Fallback Logic
 
 ```
 Step 1 → Notification created — status=pending, retry_count=0
@@ -608,11 +688,11 @@ Step 7 → All attempts logged in notifications table with timestamps
 Step 8 → Permanently failed → annapay.dead queue; Admin Portal alert banner
 ```
 
-### 6.8 Language Support
+### 7.8 Language Support
 
 All notification templates are stored in a single `message_en` column and delivered in English. Tamil and other regional language support is fully deferred to a future sprint. There is no `language_preference` field or `message_ta` column in the current sprint.
 
-### 6.9 Unread Reminder Flow
+### 7.9 Unread Reminder Flow
 
 ```
 Step 1 → Notification dispatched and logged with status=sent
@@ -627,11 +707,11 @@ Step 5 → Reminder sent via same channel as original. Only ONE reminder per
 
 ---
 
-## 7. Database Design
+## 8. Database Design
 
 The MySQL database is organized into the following core tables. All tables use auto-incremented integer primary keys and include `created_at` / `updated_at` timestamps. Sequelize ORM is used for all database interactions (prevents SQL injection via parameterized queries).
 
-### 7.1 Core Tables
+### 8.1 Core Tables
 
 <details>
 <summary><strong>View all table schemas</strong></summary>
@@ -685,7 +765,7 @@ admin_users
 ```
 </details>
 
-### 7.2 Notification Table — Status Values
+### 8.2 Notification Table — Status Values
 
 | Status | Meaning |
 |---|---|
@@ -697,9 +777,9 @@ admin_users
 
 ---
 
-## 8. Data Management — Excel Integration
+## 9. Data Management — Excel Integration
 
-### 8.1 Excel File Structure
+### 9.1 Excel File Structure
 
 Each department maintains its own Excel file. The system accepts `.xlsx` format only. Separate files exist for each academic department (e.g., `CSE_Professors.xlsx`, `MECH_Professors.xlsx`), administrative staff (`Admin_Staff.xlsx`), and blue-collar workers (`BlueCollar_Workers.xlsx`).
 
@@ -709,7 +789,7 @@ Employee ID | Full Name | Email | Phone | Department | Role/Designation |
 Date of Joining | Bank Account Number | IFSC Code | Salary Grade | Current Basic Pay
 ```
 
-### 8.2 Data Ingestion Steps
+### 9.2 Data Ingestion Steps
 
 ```
 Step 1 → Administrator logs in to Admin Portal and navigates to Data Management
@@ -722,7 +802,7 @@ Step 5 → Salary grade mapping applied from salary_grades table based on role a
 Step 6 → Experience-based increment check runs — if employee crosses a milestone, increment_triggered flag is set
 ```
 
-### 8.3 Data Cleaning Rules
+### 9.3 Data Cleaning Rules
 
 | Rule | Behaviour |
 |---|---|
@@ -732,11 +812,11 @@ Step 6 → Experience-based increment check runs — if employee crosses a miles
 | Date format normalization | All dates converted to YYYY-MM-DD |
 | Name normalization | Trimmed and title-cased |
 
-### 8.4 Post-Payment Excel Update
+### 9.4 Post-Payment Excel Update
 
 After each salary disbursement cycle, the system writes back to the source Excel file: payment status, payment date, and gateway reference number are appended as new columns. This ensures the Excel file remains in sync with the database at all times.
 
-### 8.5 Departed Employee Handling
+### 9.5 Departed Employee Handling
 
 ```
 Step 1 → Employee status set to 'inactive' in the employees table
@@ -749,13 +829,13 @@ Step 6 → Final salary settlement notification is sent to the employee (NS-06)
 
 ---
 
-## 9. Payment Gateway Integration
+## 10. Payment Gateway Integration
 
-### 9.1 Recommended Gateway
+### 10.1 Recommended Gateway
 
 Razorpay is recommended for AnnaPay due to its strong support for bulk payouts (Razorpay Payouts API), sandbox environment for testing, detailed webhook support, and wide adoption in Indian financial institutions. PayU or Cashfree are viable alternatives if Razorpay is unavailable.
 
-### 9.2 Integration Flow
+### 10.2 Integration Flow
 
 ```
 Step 1 → Administrator initiates salary run for a given month
@@ -769,7 +849,7 @@ Step 6 → On success — NS-01 salary notification dispatched via RabbitMQ
 Step 7 → On failure — Admin notified; retry scheduled or manual intervention
 ```
 
-### 9.3 Security for Payment
+### 10.3 Security for Payment
 
 - Razorpay API keys stored in environment variables, never in source code
 - Webhook signature verified using HMAC-SHA256 before processing any event
@@ -780,41 +860,41 @@ Step 7 → On failure — Admin notified; retry scheduled or manual intervention
 
 ---
 
-## 10. Administrator UI — Full Specification
+## 11. Administrator UI — Full Specification
 
-### 10.1 Login & Access Control
+### 11.1 Login & Access Control
 
 The Admin Portal is completely separate from the Employee Portal — different URL, different authentication flow, and different JWT token scope. Two admin roles: **Superadmin** (full access) and **Payroll Admin** (restricted to payroll and notifications only).
 
-### 10.2 Dashboard
+### 11.2 Dashboard
 
 - **Summary cards** — Total employees, active/inactive count, pending payments, failed notifications
 - **Quick actions** — Upload Excel, Trigger Salary Run, View Notification Log
 - **Activity feed** — Last 10 admin actions
 - **Alert banner** — Shown when `annapay.dead` queue count > 0
 
-### 10.3 Employee Management Module
+### 11.3 Employee Management Module
 
 - View all employees filterable by department, role, status
 - Edit admin-only fields: salary grade, bank details, department, role
 - Mark employee as departed: triggers archival and NS-06 notification
 - View departed employee history including full salary and notification archive
 
-### 10.4 Data Management Module
+### 11.4 Data Management Module
 
 - Upload Excel files per department
 - View upload history with status (success / partial / failed) and error report download
 - Manually trigger experience increment check
 - Download updated Excel post-payment
 
-### 10.5 Payment Management Module
+### 11.5 Payment Management Module
 
 - Initiate salary run for a selected month
 - View per-employee payment status for current and past months
 - Retry failed payments individually or in bulk
 - View gateway transaction logs
 
-### 10.6 Notification Management Module
+### 11.6 Notification Management Module
 
 - View full notification log with filters: type, status, date range, employee
 - Manually trigger any notification type for specific employees or all
@@ -823,7 +903,7 @@ The Admin Portal is completely separate from the Employee Portal — different U
 - Send custom notifications (message composed by admin)
 - View RabbitMQ queue status via Management API (pending, processing, dead letter counts)
 
-### 10.7 Tax & Deductions Module
+### 11.7 Tax & Deductions Module
 
 - View and update tax slab configurations
 - Trigger tax update notification (NS-05) to all employees after any change
@@ -831,20 +911,20 @@ The Admin Portal is completely separate from the Employee Portal — different U
 
 ---
 
-## 11. Employee UI — Full Specification
+## 12. Employee UI — Full Specification
 
-### 11.1 Login
+### 12.1 Login
 
 Employees log in via Employee ID and password. On first login, they are prompted to set a new password.
 
-### 11.2 Dashboard Overview
+### 12.2 Dashboard Overview
 
 - **Salary summary card** — Current month gross, deductions, net pay
 - **Leave balance** — Total leaves, taken, remaining
 - **Notification bell** — Unread count badge
 - **Quick links** — Salary History, Attendance, Annual Report
 
-### 11.3 Salary Details & Visualisation
+### 12.3 Salary Details & Visualisation
 
 - **Monthly breakdown** — Basic Pay, DA, HRA, TA, Gross Pay, Tax, Leave Deduction, Net Pay
 - **Bar chart** — Month-over-month net pay for last 6 months
@@ -852,33 +932,33 @@ Employees log in via Employee ID and password. On first login, they are prompted
 - **Deduction display** — Salary deducted due to leave clearly shown with number of days and amount
 - **Net pay** — Remaining salary after all deductions prominently displayed
 
-### 11.4 Attendance & Leave
+### 12.4 Attendance & Leave
 
 - **Monthly calendar** — Present (green), Absent (red), Leave (yellow), Holiday (grey)
 - **Leave types** — Casual Leave, Medical Leave, Earned Leave, Loss of Pay
 - **Leave balance** — Per type shown
 
-### 11.5 Notification History
+### 12.5 Notification History
 
 - Full list of all notifications with date, type, and read/unread status
 - Mark as read on open; bulk mark all as read option
 - Filter by type and date
 - Reminder notifications linked back to original notification
 
-### 11.6 Profile
+### 12.6 Profile
 
 | Field | Access |
 |---|---|
 | Phone number, Personal email, Home address | Editable by employee |
 | Employee ID, Department, Role, Bank Account, Salary Grade | View-only (admin-managed) |
 
-### 11.7 Annual Report
+### 12.7 Annual Report
 
 - Downloadable PDF with month-wise salary, total gross, deductions, tax, net earnings
 - Tax summary for the financial year
 - Sent automatically at year end; also available on-demand
 
-### 11.8 AI Insights Panel (Phase 2)
+### 12.8 AI Insights Panel (Phase 2)
 
 - Predicted annual tax based on current salary trend
 - Salary growth trend over past 12 months
@@ -887,9 +967,9 @@ Employees log in via Employee ID and password. On first login, they are prompted
 
 ---
 
-## 12. Technology Stack — Complete Justification
+## 13. Technology Stack — Complete Justification
 
-### 12.1 Frontend Technologies
+### 13.1 Frontend Technologies
 
 | Technology | Version/Detail | Purpose & Justification |
 |---|---|---|
@@ -901,7 +981,7 @@ Employees log in via Employee ID and password. On first login, they are prompted
 | Angular FormsModule | Built-in | Template-driven forms (login, profile, upload, triggers) |
 | HttpClientModule | Built-in | REST API communication |
 
-### 12.2 Backend Technologies
+### 13.2 Backend Technologies
 
 | Technology | Version/Detail | Purpose & Justification |
 |---|---|---|
@@ -918,7 +998,7 @@ Employees log in via Employee ID and password. On first login, they are prompted
 | Helmet.js | Latest | Security headers (CSP, HSTS, X-Frame-Options) |
 | express-rate-limit | Latest | 100 requests / 15 min / IP |
 
-### 12.3 Message Queue — RabbitMQ
+### 13.3 Message Queue — RabbitMQ
 
 | Component | Detail |
 |---|---|
@@ -930,7 +1010,7 @@ Employees log in via Employee ID and password. On first login, they are prompted
 | Dead-Letter Exchange | Auto-routes expired retry messages back to queue |
 | Client Library | `amqplib` (Node.js AMQP client) |
 
-### 12.4 Database Technologies
+### 13.4 Database Technologies
 
 | Technology | Detail | Purpose |
 |---|---|---|
@@ -938,7 +1018,7 @@ Employees log in via Employee ID and password. On first login, they are prompted
 | Sequelize ORM | 6.x | Modeling, migrations, parameterized queries |
 | Excel (.xlsx) | SheetJS | Source of truth for employee records; written back after payment |
 
-### 12.5 SMS Fallback
+### 13.5 SMS Fallback
 
 | | Detail |
 |---|---|
@@ -946,7 +1026,7 @@ Employees log in via Employee ID and password. On first login, they are prompted
 | Fallback SMS | Twilio — global fallback if MSG91 unavailable |
 | When Triggered | Only after 3 failed In-App + Email attempts |
 
-### 12.6 Payment Gateway
+### 13.6 Payment Gateway
 
 | | Detail |
 |---|---|
@@ -956,7 +1036,7 @@ Employees log in via Employee ID and password. On first login, they are prompted
 | Bank Data Encryption | AES-256 via Node.js crypto module |
 | Compliance | Payment logs retained 7 years; all calls over HTTPS |
 
-### 12.7 DevOps & Deployment Tools
+### 13.7 DevOps & Deployment Tools
 
 | Technology | Purpose |
 |---|---|
@@ -971,7 +1051,7 @@ Employees log in via Employee ID and password. On first login, they are prompted
 | AWS S3 + CloudFront | Static Angular hosting; Excel and PDF file storage |
 | GitHub Actions | CI/CD: lint → tests → build → staging → production |
 
-### 12.8 Security & Authentication
+### 13.8 Security & Authentication
 
 | Technology / Practice | Detail |
 |---|---|
@@ -987,13 +1067,13 @@ Employees log in via Employee ID and password. On first login, they are prompted
 
 ---
 
-## 13. API Design
+## 14. API Design
 
 All APIs follow REST conventions. Base URL: `/api/v1/`
 All endpoints except `/auth` require a valid JWT in `Authorization: Bearer` header.
 Admin-only endpoints validate `token scope=admin`. Cross-scope access → `403`.
 
-### 13.1 Authentication APIs
+### 14.1 Authentication APIs
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -1002,7 +1082,7 @@ Admin-only endpoints validate `token scope=admin`. Cross-scope access → `403`.
 | POST | `/auth/logout` | Invalidates token (token blocklist). |
 | PUT | `/auth/change-password` | Employee changes their own password. |
 
-### 13.2 Employee APIs
+### 14.2 Employee APIs
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -1013,7 +1093,7 @@ Admin-only endpoints validate `token scope=admin`. Cross-scope access → `403`.
 | POST | `/employees/:id/depart` | [Admin] Mark as departed; triggers archival and NS-06. |
 | GET | `/employees/:id/history` | [Admin] Get departed employee salary history. |
 
-### 13.3 Salary & Payment APIs
+### 14.3 Salary & Payment APIs
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -1023,7 +1103,7 @@ Admin-only endpoints validate `token scope=admin`. Cross-scope access → `403`.
 | GET | `/salary/:empId/annual-report` | Get annual salary and tax report. |
 | POST | `/payments/webhook` | Razorpay webhook — verified by HMAC-SHA256 signature. |
 
-### 13.4 Notification APIs
+### 14.4 Notification APIs
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -1036,9 +1116,9 @@ Admin-only endpoints validate `token scope=admin`. Cross-scope access → `403`.
 
 ---
 
-## 14. Security
+## 15. Security
 
-### 14.1 Authentication & Authorization
+### 15.1 Authentication & Authorization
 
 - JWT tokens: access token 1 hour, refresh token 7 days
 - Separate token scopes for admin and employee — cross-scope returns 403
@@ -1046,28 +1126,28 @@ Admin-only endpoints validate `token scope=admin`. Cross-scope access → `403`.
 - Brute force protection: account locked after 5 failed logins for 15 minutes
 - Two admin roles: Superadmin (full access) and Payroll Admin (restricted)
 
-### 14.2 Data Security
+### 15.2 Data Security
 
 - Bank account numbers and IFSC codes encrypted at rest (AES-256)
 - All API communication over HTTPS (TLS 1.2+); HTTP redirected to HTTPS
 - Environment variables for all secrets — never hardcoded in source code
 - MySQL connection uses SSL if hosted on cloud
 
-### 14.3 Input Validation & Injection Prevention
+### 15.3 Input Validation & Injection Prevention
 
 - All API inputs validated using express-validator before processing
 - Sequelize ORM prevents SQL injection via parameterized queries
 - Excel file upload: MIME type validated (`application/vnd.openxmlformats` only), max file size 10MB enforced
 - Angular templates use built-in sanitization
 
-### 14.4 API Security
+### 15.4 API Security
 
 - Rate limiting: 100 requests per 15 minutes per IP (express-rate-limit)
 - CORS configured to allow only the Angular frontend origin
 - Helmet.js for security headers (X-Frame-Options, CSP, HSTS)
 - Razorpay webhook verifies HMAC-SHA256 signature before any processing
 
-### 14.5 Audit Trail
+### 15.5 Audit Trail
 
 Every data modification — salary update, employee departure, tax change, notification trigger — is logged to the `audit_log` table with the action, table affected, record ID, who performed it, timestamp, old value, and new value. This log is read-only for all portal users and retained for 7 years.
 
@@ -1077,9 +1157,9 @@ Every data modification — salary update, employee departure, tax change, notif
 
 ---
 
-## 15. Deployment
+## 16. Deployment
 
-### 15.1 Recommended Architecture
+### 16.1 Recommended Architecture
 
 | Component | Technology |
 |---|---|
@@ -1089,7 +1169,7 @@ Every data modification — salary update, employee departure, tax change, notif
 | Database (MySQL) | AWS RDS MySQL 8.0; automated backups (7-day retention) |
 | File Storage | AWS S3 bucket; private, accessed via signed URLs |
 
-### 15.2 Environment Configuration
+### 16.2 Environment Configuration
 
 All environments (dev, staging, prod) use `.env` files loaded by dotenv. Never commit `.env` to version control.
 
@@ -1108,7 +1188,7 @@ All environments (dev, staging, prod) use `.env` files loaded by dotenv. Never c
 | `MAX_NOTIFICATION_RETRIES` | Max retries before SMS fallback (default: 3) |
 | `ENCRYPTION_KEY` | AES-256 key for encrypting bank account data |
 
-### 15.3 CI/CD Pipeline (GitHub Actions)
+### 16.3 CI/CD Pipeline (GitHub Actions)
 
 | Stage | Action |
 |---|---|
@@ -1120,7 +1200,7 @@ All environments (dev, staging, prod) use `.env` files loaded by dotenv. Never c
 | Stage 6 — Manual Approval | Human gate before production deploy |
 | Stage 7 — Deploy to Prod | On approval; Sequelize migrations run automatically |
 
-### 15.4 Monitoring
+### 16.4 Monitoring
 
 - PM2 dashboard for process health on EC2
 - AWS CloudWatch for EC2 and RDS metrics
@@ -1130,7 +1210,7 @@ All environments (dev, staging, prod) use `.env` files loaded by dotenv. Never c
 
 ---
 
-## 16. QA / Test Strategy
+## 17. QA / Test Strategy
 
 Since payroll information is highly sensitive financial data, the notification system must be tested for functionality, accuracy, privacy, performance, and failure handling. Testing follows a **Risk-Based** approach focusing on:
 
@@ -1141,7 +1221,7 @@ Since payroll information is highly sensitive financial data, the notification s
 - Security and data privacy compliance
 - Failure handling and retry mechanisms
 
-### 16.1 Unit Tests
+### 17.1 Unit Tests
 
 | TC-ID | Test Case | Module |
 |---|---|---|
@@ -1161,7 +1241,7 @@ Since payroll information is highly sensitive financial data, the notification s
 | UT-14 | Notification template exists in English → correct message_en delivered to employee | Notification |
 | UT-15 | Unread reminder → only ONE entry in notification_reminders per notif_id | Reminder Scheduler |
 
-### 16.2 Integration Tests
+### 17.2 Integration Tests
 
 | IT-ID | Test Case | Validation Points |
 |---|---|---|
@@ -1174,7 +1254,7 @@ Since payroll information is highly sensitive financial data, the notification s
 | IT-07 | End-to-end RabbitMQ: event published → worker consumes → email sent → DB updated | No data loss; status=sent; sent_at populated; channel=in_app+email |
 | IT-08 | Failed notification retried 3 times → SMS fallback → admin alert | retry_count=3; annapay.sms_fallback consumed; alert in portal |
 
-### 16.3 End-to-End Tests
+### 17.3 End-to-End Tests
 
 | E2E-ID | Scenario |
 |---|---|
@@ -1186,7 +1266,7 @@ Since payroll information is highly sensitive financial data, the notification s
 | E2E-06 | Employee does not open notification for 48 hours → daily cron detects → reminder NS-07 sent once |
 | E2E-07 | Admin triggers bulk notification for 2000 staff → all receive notification → no duplicates → no server crash |
 
-### 16.4 Performance & Scalability Testing
+### 17.4 Performance & Scalability Testing
 
 **Critical Scenario: Payroll Day (Peak Load)**
 
@@ -1195,7 +1275,7 @@ Since payroll information is highly sensitive financial data, the notification s
 - Expected: No server crash, no delayed notifications beyond 5 minutes, no duplicate messages, system remains responsive
 - QA Recommendation: Use RabbitMQ's priority-isolated queues and worker prefetch settings to prevent overload. Consider horizontal scaling of worker processes on peak days.
 
-### 16.5 Security & Privacy Testing
+### 17.5 Security & Privacy Testing
 
 - No full bank account details exposed in any notification or API response
 - Authentication required for viewing notification history
@@ -1205,7 +1285,7 @@ Since payroll information is highly sensitive financial data, the notification s
 - One staff must never see another staff's notification (EID filtering)
 - Payslip links must be user-specific — unauthorized access returns 403
 
-### 16.6 Negative & Failure Testing
+### 17.6 Negative & Failure Testing
 
 | Scenario | Expected Behaviour |
 |---|---|
@@ -1220,7 +1300,7 @@ Since payroll information is highly sensitive financial data, the notification s
 | Bulk trigger pressed twice | Duplicate protection prevents double send; admin warned |
 | RabbitMQ broker restart mid-send | Persistent messages survive; workers re-consume and process |
 
-### 16.7 Risk Identification (QA Perspective)
+### 17.7 Risk Identification (QA Perspective)
 
 | Risk | Impact | Mitigation |
 |---|---|---|
@@ -1231,7 +1311,7 @@ Since payroll information is highly sensitive financial data, the notification s
 | RabbitMQ broker crash | High | Persistent queues (delivery_mode=2); durable declarations; ACK/NACK |
 | Notification template missing | Low | Validate all message_en templates exist before salary run |
 
-### 16.8 Logging & Audit Validation
+### 17.8 Logging & Audit Validation
 
 All notifications must log the following in the notifications table:
 
@@ -1245,7 +1325,7 @@ All notifications must log the following in the notifications table:
 
 Audit logs in `audit_log` must not be editable by staff. Retained 7 years.
 
-### 16.9 Requirement Traceability Matrix (RTM)
+### 17.9 Requirement Traceability Matrix (RTM)
 
 | User Story | Test Case IDs | Status |
 |---|---|---|
@@ -1260,7 +1340,7 @@ Audit logs in `audit_log` must not be editable by staff. Retained 7 years.
 | US-11 Unread Reminder | UT-15, E2E-06 | Planned |
 | US-19 Bilingual Support | Deferred to future sprint — no test cases in Sprint Zero | Future |
 
-### 16.10 Sprint Zero QA Success Criteria
+### 17.10 Sprint Zero QA Success Criteria
 
 Sprint Zero will be considered QA-ready when:
 
@@ -1272,9 +1352,107 @@ Sprint Zero will be considered QA-ready when:
 - Requirement Traceability Matrix prepared and signed off
 - Idempotency tested: no duplicate notifications in any scenario
 
+### 17.11 Test Coverage Metrics
+
+To ensure reliability of payroll and notification workflows, automated test coverage metrics are tracked and reviewed in every sprint.
+
+**Coverage Targets:**
+
+| Module | Target |
+|---|---|
+| Overall Unit Test Coverage | ≥ 85% |
+| Critical Salary Engine Coverage | ≥ 95% |
+| Notification Worker Logic Coverage | ≥ 90% |
+| API Endpoint Coverage | ≥ 80% |
+| Idempotency & Retry Logic Coverage | 100% |
+| Authentication & RBAC Middleware Coverage | ≥ 90% |
+
+**Coverage Tools:**
+- Unit tests implemented using Jest
+- Coverage reports generated using Istanbul (nyc)
+- HTML and console coverage reports archived in CI pipeline artifacts
+
+**Build Quality Gate:**
+- If overall coverage falls below 75%, CI pipeline fails
+- Pull requests cannot be merged without passing all automated tests
+- Critical modules (Salary Engine, Notification Worker) must maintain minimum threshold regardless of overall coverage
+
+> Payroll involves financial and compliance-sensitive data; therefore, high coverage is mandatory for salary calculations, payment triggers, and retry/idempotency logic to prevent financial discrepancies.
+
+### 17.12 CI Integration & Automated Test Execution
+
+All automated tests are integrated into Continuous Integration (CI) to ensure code reliability before deployment.
+
+**CI Tool:** Jenkins automation server
+
+**Pipeline Stages:**
+
+| Stage | Action |
+|---|---|
+| 1 | Source Code Checkout (Git) |
+| 2 | Dependency Installation |
+| 3 | Build Validation |
+| 4 | Run Unit Tests |
+| 5 | Run Integration Tests |
+| 6 | Generate Coverage Report |
+| 7 | Enforce Coverage Threshold |
+| 8 | Archive Test Artifacts |
+
+**Build Failure Conditions:**
+- Any unit or integration test failure
+- Coverage below defined threshold (75%)
+- Lint or static analysis errors
+- Security vulnerability detected in dependency scan
+
+**Branch Protection Policy:**
+- Direct commits to main branch disabled
+- Pull request required
+- Mandatory CI approval before merge
+
+> Prevent defective payroll logic, duplicate notifications, or security regressions from reaching production.
+
+### 17.13 Concurrency & Race Condition Testing
+
+Since payroll processing involves financial transactions and distributed message queues, concurrency scenarios are explicitly validated.
+
+**Concurrency Scenarios Tested:**
+
+| # | Scenario | Expected Behaviour |
+|---|---|---|
+| 1 | **Dual Payroll Trigger** — Two administrators trigger salary run simultaneously | Only one payroll batch created; second request receives "Payroll Already Processing"; no duplicate salary_records |
+| 2 | **Parallel Worker Consumption** — Multiple RabbitMQ workers consuming same queue | Each notification processed exactly once; idempotency check prevents duplicate delivery |
+| 3 | **Double Bulk Notification Trigger** — Admin presses bulk trigger twice rapidly | System detects existing batch_id and skips duplicates |
+| 4 | **Concurrent Payslip Access** — Multiple employees access payslip simultaneously | No database deadlock or performance degradation |
+| 5 | **Simultaneous Webhook & Manual Status Update** — Razorpay webhook and admin action occur at same time | Transactional update ensures correct payment_status |
+
+**Technical Safeguards Validated:**
+- Database unique constraint (`emp_id + month + type`)
+- Transaction isolation level: READ COMMITTED
+- Idempotency keys for salary run and notification events
+- Optimistic locking for status updates
+- RabbitMQ message ACK/NACK validation
+
+> Guarantee exactly-once financial processing and prevent race-condition induced duplicate salary disbursement.
+
+### 17.14 Financial Integrity & Data Validation Testing
+
+Because payroll directly affects financial disbursement, strict data consistency and reconciliation validations are performed.
+
+| # | Validation Check | Detail |
+|---|---|---|
+| 1 | **Salary Formula Validation** | `gross_pay - deductions = net_pay` cross-verified via automated validation script before publish |
+| 2 | **Duplicate Salary Prevention** | No employee receives salary twice for same month; enforced via composite uniqueness constraint `(emp_id, month, year)` |
+| 3 | **Payment Status Validation** | `payment_status` updated only after verified Razorpay webhook signature; manual override requires admin-level RBAC permission |
+| 4 | **Bank Transfer Reconciliation** | Sum of all net_pay values in batch must equal total bank transfer amount; mismatch triggers admin alert and blocks finalization |
+| 5 | **Partial Payment Handling** | If employee lacks bank details: salary_record created, payment_status = payment_pending, admin notified — no silent failure |
+| 6 | **Tax & Deduction Accuracy** | Tax slab boundaries tested for edge values; leave deductions calculated per-day accurately; experience increments validated against milestone rules |
+| 7 | **Audit Integrity** | All salary changes logged in audit_log; audit records immutable for 7-year retention policy |
+
+> Ensure zero financial discrepancies, prevent duplicate payments, and maintain audit-compliant payroll history.
+
 ---
 
-## 17. Edge Cases & Error Handling
+## 18. Edge Cases & Error Handling
 
 | Edge Case / Error Scenario | Handling Strategy |
 |---|---|
@@ -1293,86 +1471,6 @@ Sprint Zero will be considered QA-ready when:
 | RabbitMQ broker unavailable when notification needs publishing | API returns error; notification row created status=pending in DB; manual re-trigger available in admin panel |
 | FCM token is stale (registration-not-found) | Stale token cleared from employees table; notification continues via email |
 | Bulk send trigger pressed twice within seconds | Second trigger detects active bulk send in progress; rejected with conflict error; admin warned |
-
----
-
-## 18. Business Analysis — Stakeholders, Requirements & Bridge
-
-### 18.1 Stakeholders Identified
-
-- **University Admin / HR / Finance** — trigger payroll, manage staff records, send bulk notifications
-- **Staff Members (Professors, Non-Teaching Staff)** — receive salary, deduction, and payslip notifications
-- **IT/Tech Team** — maintain the system, manage infrastructure
-
-### 18.2 Key Requirements Gathered
-
-- Staff must be notified when salary is credited
-- Staff must be notified when payslip is available
-- Staff must be notified about any deductions in salary
-- HR/Admin must be able to trigger bulk notifications after payroll
-- Staff must be able to view their past notification history
-- Notifications should support English only in current sprint (Tamil in future sprint)
-
-### 18.3 Requirement Feasibility & Priority
-
-| Requirement | Feasibility | Priority |
-|---|---|---|
-| Salary credited notification | High | Critical |
-| Payslip available alert | High | High |
-| Deduction/tax details notification | High | High |
-| Admin bulk notification trigger | High | High |
-| Notification history for staff | Medium | Medium |
-| Multi-language support (Tamil) | Low | Future Sprint |
-
-### 18.4 Business Need ↔ Tech Solution Bridge
-
-<details>
-<summary><strong>US-01 — Staff notified moment salary is credited</strong></summary>
-
-- **BA Need** — Staff should know the moment salary is credited to their bank without manually checking
-- **Developer** — Node.js consumes Razorpay webhook, publishes to RabbitMQ `annapay.critical`; worker dispatches via FCM + Nodemailer; Angular shows real-time notification
-- **Tester** — Verify notification received within 5 minutes after credit trigger; net amount matches DB
-</details>
-
-<details>
-<summary><strong>US-02 — Staff knows when payslip is ready</strong></summary>
-
-- **BA Need** — Staff should be immediately informed when payslip is available
-- **Developer** — Node.js sends notification with payslip reference when generated; Angular renders link in notification panel
-- **Tester** — Check if reference works and notification reaches correct staff only
-</details>
-
-<details>
-<summary><strong>US-03 — Staff aware of any salary deductions</strong></summary>
-
-- **BA Need** — Staff should be clearly informed about deductions with type and amount
-- **Developer** — Node.js fetches deduction data from MySQL, includes in notification payload via RabbitMQ; Angular displays summary
-- **Tester** — Verify deduction details in notification match actual payroll data in MySQL
-</details>
-
-<details>
-<summary><strong>US-04 — HR notifies all staff at once after payroll</strong></summary>
-
-- **BA Need** — HR should be able to send notifications to all 2000+ staff in one action with no manual effort
-- **Developer** — Angular admin panel has trigger button; Node.js publishes one message per employee to RabbitMQ; workers handle bulk
-- **Tester** — Test bulk send with 2000+ user accounts; check no one missed; verify idempotency
-</details>
-
-<details>
-<summary><strong>US-05 — Staff views past notifications</strong></summary>
-
-- **BA Need** — Staff should have a record of all payroll notifications received for reference
-- **Developer** — Node.js stores every notification in MySQL notifications table; Angular fetches and displays history ordered by date
-- **Tester** — Verify history accurate, ordered by date, loads correctly
-</details>
-
-<details>
-<summary><strong>US-06 — All notifications in English for current sprint</strong></summary>
-
-- **BA Need** — All staff should be able to read and understand notifications
-- **Developer** — All notification templates authored in English (message_en); Tamil support deferred
-- **Tester** — Verify all notifications delivered in English correctly
-</details>
 
 ---
 
