@@ -1441,12 +1441,12 @@ In future sprints, the following features can be added:
 
 ## 22. Team Roles
 
-| Role | Name |
-|---|---|
-| Business Analyst | Sukesh M R | @Sukesh1103
-| Scrum Master | Kamalasree S | @kamalasree234
-| Developer | Harish Subramanian | @hari1763sky
-| Tester | Ramya S | @Ramya0888
+| Role | Name | GitHub |
+|------|------|--------|
+| Business Analyst | Sukesh M R | [@Sukesh1103](https://github.com/Sukesh1103) |
+| Scrum Master | Kamalasree S | [@kamalasree234](https://github.com/kamalasree234) |
+| Developer | Harish Subramanian | [@hari1763sky](https://github.com/hari1763sky) |
+| Tester | Ramya S | [@Ramya0888](https://github.com/Ramya0888) |
 
 ---
 
