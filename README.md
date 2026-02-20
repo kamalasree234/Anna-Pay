@@ -19,13 +19,6 @@
 </div>
 
 ---
-<h2 align="center">👥 Team: <b>Quadret Titans</b> 🚀</h2>
-
-<p align="center">
-✨ <i>Driven by teamwork, powered by innovation.</i>
-</p>
-
----
 
 ## 📋 Table of Contents
 
@@ -64,7 +57,7 @@ Staff members are not automatically informed when their salary is credited, when
 - Staff manually check bank accounts repeatedly to verify salary credits
 - Confusion arises regarding salary deductions and discrepancies
 - Delayed awareness of payslip availability leads to frustration
-- HR receives repeated queries from staff about payment status
+- Admin receives repeated queries from staff about payment status
 - No centralized, role-based payroll dashboard integrating data from multiple departments
 - When employees leave, records are often lost or inaccessible, creating compliance and legal risks
 
@@ -96,7 +89,7 @@ AnnaPay is a web-based payroll management system specifically designed for colle
 - Two-way notification reply system
 - Analytics dashboard for notification delivery reports
 - Tamil language support (deferred to future sprint — English only for now)
-- Real-time two-way communication between staff and HR
+- Real-time two-way communication between staff and Admin
 
 ---
 
@@ -104,7 +97,7 @@ AnnaPay is a web-based payroll management system specifically designed for colle
 
 ### 3.1 Stakeholders Identified
 
-- **University Admin / HR / Finance** — trigger payroll, manage staff records, send bulk notifications
+- **University Admin / Finance** — trigger payroll, manage staff records, send bulk notifications
 - **Staff Members (Professors, Non-Teaching Staff)** — receive salary, deduction, and payslip notifications
 - **IT/Tech Team** — maintain the system, manage infrastructure
 
@@ -113,7 +106,7 @@ AnnaPay is a web-based payroll management system specifically designed for colle
 - Staff must be notified when salary is credited
 - Staff must be notified when payslip is available
 - Staff must be notified about any deductions in salary
-- HR/Admin must be able to trigger bulk notifications after payroll
+- Admin must be able to trigger bulk notifications after payroll
 - Staff must be able to view their past notification history
 - Notifications should support English only in current sprint (Tamil in future sprint)
 
@@ -155,9 +148,9 @@ AnnaPay is a web-based payroll management system specifically designed for colle
 </details>
 
 <details>
-<summary><strong>US-04 — HR notifies all staff at once after payroll</strong></summary>
+<summary><strong>US-04 — Admin notifies all staff at once after payroll</strong></summary>
 
-- **BA Need** — HR should be able to send notifications to all 2000+ staff in one action with no manual effort
+- **BA Need** — Admin should be able to send notifications to all 2000+ staff in one action with no manual effort
 - **Developer** — Angular admin panel has trigger button; Node.js publishes one message per employee to RabbitMQ; workers handle bulk
 - **Tester** — Test bulk send with 2000+ user accounts; check no one missed; verify idempotency
 </details>
@@ -302,7 +295,7 @@ User stories are ordered by descending priority. Higher story points indicate hi
 <details>
 <summary><strong>US-04 (High) — Admin Bulk Notification Trigger</strong></summary>
 
-> As an HR/Admin, I want to trigger notifications to all staff after payroll is processed, so that every staff member is informed at the same time without manual effort.
+> As an Admin, I want to trigger notifications to all staff after payroll is processed, so that every staff member is informed at the same time without manual effort.
 
 **Acceptance Criteria:**
 - Admin must have a trigger button/interface in the admin panel
@@ -1506,7 +1499,7 @@ In future sprints, the following features can be added:
 - **WhatsApp Notification Support** — Integrate WhatsApp Business API for salary alerts directly to staff WhatsApp numbers
 - **More Language Support** — Tamil, Hindi, and other regional languages based on staff requirements
 - **Analytics Dashboard for Admin** — View notifications sent, delivered, failed, and opened with detailed reports
-- **Two-way Notification (Query System)** — Staff can reply to a notification to raise a query directly to HR
+- **Two-way Notification (Query System)** — Staff can reply to a notification to raise a query directly to Admin
 - **Scheduled Notification Reminders** — Reminders if staff has not viewed payslip within a configurable number of days
 - **Smart Notification Preferences** — Staff choose which notifications they want to receive and through which channel
 - **Integration with More Payroll Systems** — Extend support to other university payroll or ERP systems
@@ -1520,9 +1513,9 @@ In future sprints, the following features can be added:
 
 | Step | Who / What | Action |
 |---|---|---|
-| 1 | HR/Admin | Logs into Admin Portal; uploads department Excel file |
+| 1 | Admin | Logs into Admin Portal; uploads department Excel file |
 | 2 | Node.js Backend | Parses, validates, and upserts employee data into MySQL |
-| 3 | HR/Admin | Initiates salary run for the month |
+| 3 | Admin | Initiates salary run for the month |
 | 4 | Node.js Payroll Engine | Computes net salary for each employee using salary_grades, leave_records, tax_policies |
 | 5 | Razorpay Payouts API | Transfers net salary to employee's linked bank account |
 | 6 | Razorpay Webhook | Sends payment success/failure event to AnnaPay webhook endpoint |
