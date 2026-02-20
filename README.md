@@ -14,6 +14,8 @@
   <img src="https://img.shields.io/badge/Domain-Higher%20Education-blue?style=flat-square"/>
   <img src="https://img.shields.io/badge/Client-Anna%20University%20Campus-red?style=flat-square"/>
   <img src="https://img.shields.io/badge/Process-Agile%20Scrum%20Sprint%20Zero-green?style=flat-square"/>
+  ## 👥 Team: **Quadret Titans** 🚀  
+✨ *Driven by teamwork, powered by innovation.*  
 </p>
 
 </div>
