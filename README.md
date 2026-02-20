@@ -1443,10 +1443,10 @@ In future sprints, the following features can be added:
 
 | Role | Name |
 |---|---|
-| Business Analyst | Sukesh M R |
-| Scrum Master | Kamalasree S |
-| Developer | Harish Subramanian |
-| Tester | Ramya S |
+| Business Analyst | Sukesh M R | @Sukesh1103
+| Scrum Master | Kamalasree S | @kamalasree234
+| Developer | Harish Subramanian | @hari1763sky
+| Tester | Ramya S | @Ramya0888
 
 ---
 
