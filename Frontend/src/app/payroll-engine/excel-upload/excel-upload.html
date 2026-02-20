@@ -1,0 +1,29 @@
+<div class="container">
+  <h2>Upload Department Excel File</h2>
+
+  <input type="file" (change)="onFileChange($event)" accept=".xlsx" />
+
+  <button (click)="processPayroll()">Process Payroll</button>
+
+  <hr>
+
+  <div *ngIf="processedData.length > 0">
+    <h3>Payroll Preview</h3>
+
+    <table border="1">
+      <tr>
+        <th>Name</th>
+        <th>Role</th>
+        <th>Experience</th>
+        <th>Net Salary</th>
+      </tr>
+
+      <tr *ngFor="let emp of processedData">
+        <td>{{ emp.name }}</td>
+        <td>{{ emp.role }}</td>
+        <td>{{ emp.experience }}</td>
+        <td>{{ emp.netSalary }}</td>
+      </tr>
+    </table>
+  </div>
+</div>

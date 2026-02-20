@@ -1,0 +1,25 @@
+<div class="container" *ngIf="calculatedEmployees.length > 0">
+
+  <h2>Payroll Calculation Preview</h2>
+
+  <table border="1" cellpadding="8">
+    <tr>
+      <th>Name</th>
+      <th>Role</th>
+      <th>Experience</th>
+      <th>Increment</th>
+      <th>Bonus</th>
+      <th>Net Salary</th>
+    </tr>
+
+    <tr *ngFor="let emp of calculatedEmployees">
+      <td>{{ emp.name }}</td>
+      <td>{{ emp.roleType }}</td>
+      <td>{{ emp.experience }}</td>
+      <td>{{ emp.increment || 0 }}</td>
+      <td>{{ emp.bonus || 0 }}</td>
+      <td><b>₹ {{ emp.netSalary }}</b></td>
+    </tr>
+  </table>
+
+</div>

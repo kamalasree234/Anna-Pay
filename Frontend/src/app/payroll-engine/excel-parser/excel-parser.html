@@ -1,0 +1,69 @@
+<div class="container mt-5">
+  <div class="card shadow p-4">
+
+    <h2 class="text-center mb-4 text-primary">
+      AnnaPay - Excel Payroll Upload
+    </h2>
+
+    <div class="mb-3">
+      <input 
+        type="file" 
+        accept=".xlsx,.xls" 
+        class="form-control"
+        (change)="onFileChange($event)" />
+    </div>
+
+    <div class="d-grid mb-3">
+      <button 
+        class="btn btn-success"
+        (click)="validateSheets()" 
+        [disabled]="!workbookLoaded">
+        Validate & Preview
+      </button>
+    </div>
+
+    <hr>
+
+    <!-- Validation Errors -->
+    <div *ngIf="validationErrors.length > 0" 
+         class="alert alert-danger">
+      <h5 class="fw-bold">Validation Errors</h5>
+      <ul class="mb-0">
+        <li *ngFor="let error of validationErrors">
+          {{ error }}
+        </li>
+      </ul>
+    </div>
+
+    <!-- Parsed Data Preview -->
+    <div *ngIf="parsedData.length > 0">
+      <h4 class="mb-3 text-success">
+        Parsed Payroll Data
+      </h4>
+
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped table-hover">
+          <thead class="table-dark">
+            <tr>
+              <th>Name</th>
+              <th>Role</th>
+              <th>Experience</th>
+              <th>Sheet</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let emp of parsedData">
+              <td>{{ emp.name }}</td>
+              <td>{{ emp.role }}</td>
+              <td>{{ emp.experience }}</td>
+              <td>{{ emp.sheetType }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+  </div>
+</div>

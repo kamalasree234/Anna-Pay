@@ -1,0 +1,75 @@
+<div class="container mt-5">
+
+  <div class="card shadow-lg">
+    <div class="card-body">
+
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="text-primary mb-0">Notification Center</h2>
+
+        <div>
+          <button 
+            class="btn btn-outline-primary btn-sm me-2"
+            (click)="changeLanguage('English')">
+            English
+          </button>
+
+          <button 
+            class="btn btn-outline-success btn-sm"
+            (click)="changeLanguage('Tamil')">
+            Tamil
+          </button>
+        </div>
+      </div>
+
+      <hr>
+
+      <div *ngFor="let notif of notifications"
+           class="card mb-3 shadow-sm"
+           [ngClass]="{
+             'border-danger': notif.priority === 'Critical',
+             'border-warning': notif.priority === 'High',
+             'border-success': notif.priority === 'Normal'
+           }">
+
+        <div class="card-body">
+
+          <!-- Priority Badge -->
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="badge"
+                  [ngClass]="{
+                    'bg-danger': notif.priority === 'Critical',
+                    'bg-warning text-dark': notif.priority === 'High',
+                    'bg-success': notif.priority === 'Normal'
+                  }">
+              {{ notif.priority }}
+            </span>
+
+            <button 
+              class="btn btn-sm btn-outline-secondary"
+              (click)="markRead(notif.id)">
+              Mark as Read
+            </button>
+          </div>
+
+          <!-- Message -->
+          <p class="mb-1" *ngIf="selectedLanguage === 'English'">
+            {{ notif.messageEnglish }}
+          </p>
+
+          <p class="mb-1" *ngIf="selectedLanguage === 'Tamil'">
+            {{ notif.messageTamil }}
+          </p>
+
+        </div>
+      </div>
+
+      <!-- No Notifications Message -->
+      <div *ngIf="notifications.length === 0" 
+           class="alert alert-info text-center">
+        No notifications available.
+      </div>
+
+    </div>
+  </div>
+
+</div>

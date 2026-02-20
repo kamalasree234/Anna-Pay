@@ -1,0 +1,21 @@
+<div class="container mt-4">
+  <div class="card shadow p-4">
+    <h3 class="text-primary">Administrator Portal</h3>
+
+    <hr>
+
+    <h5>Employee Details</h5>
+    <p><strong>Name:</strong> {{ employee.name }}</p>
+    <p><strong>ID:</strong> {{ employee.id }}</p>
+
+    <h5>Net Salary: ₹ {{ netSalary }}</h5>
+
+    <button class="btn btn-success" (click)="paySalary()">
+      Disburse Salary
+    </button>
+
+    <div *ngIf="paymentStatus" class="alert alert-info mt-3">
+      {{ paymentStatus }}
+    </div>
+  </div>
+</div>

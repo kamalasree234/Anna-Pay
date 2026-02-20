@@ -1,0 +1,32 @@
+<div class="container mt-4">
+  <div class="card shadow p-4">
+    <h3 class="text-success">Employee Portal</h3>
+
+    <hr>
+
+    <h5>Salary Breakdown</h5>
+
+    <ul class="list-group">
+      <li class="list-group-item">
+        Basic Pay: ₹ {{ employee.basic }}
+      </li>
+      <li class="list-group-item">
+        DA: ₹ {{ employee.da }}
+      </li>
+      <li class="list-group-item">
+        HRA: ₹ {{ employee.hra }}
+      </li>
+      <li class="list-group-item text-danger">
+        Tax: ₹ {{ employee.tax }}
+      </li>
+      <li class="list-group-item fw-bold text-primary">
+        Net Salary: ₹ {{ netSalary }}
+      </li>
+    </ul>
+
+    <hr>
+
+    <h5>Attendance</h5>
+    <p>Days Present: {{ employee.attendance }}</p>
+  </div>
+</div>
