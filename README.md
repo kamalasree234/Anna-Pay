@@ -19,8 +19,11 @@
 </div>
 
 ---
-## 👥 Team: **Quadret Titans** 🚀  
-✨ *Driven by teamwork, powered by innovation.*  
+<h2 align="center">👥 Team: <b>Quadret Titans</b> 🚀</h2>
+
+<p align="center">
+✨ <i>Driven by teamwork, powered by innovation.</i>
+</p>
 
 ---
 
