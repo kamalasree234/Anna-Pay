@@ -19,7 +19,7 @@
 </div>
 
 ---
-<h2 align="center">🛡️ Team: <b>Quadret Titans</b> 🚀</h2>
+<h2 align="center">🛡️ Team: <b>Quadrettitans</b> 🚀</h2>
 
 <p align="center">
 ✨ <i>Driven by teamwork, powered by innovation.</i>
